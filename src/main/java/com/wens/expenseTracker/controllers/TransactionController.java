@@ -1,11 +1,10 @@
 package com.wens.expenseTracker.controllers;
 
+import com.wens.expenseTracker.exceptions.TransactionNotFoundException;
 import com.wens.expenseTracker.models.Transaction;
 import com.wens.expenseTracker.services.TransactionService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -16,6 +15,7 @@ import java.util.Date;
 import java.util.List;
 
 @RestController
+@CrossOrigin
 @RequestMapping("/api/v1/expense-tracker")
 public class TransactionController {
     @Autowired
@@ -46,11 +46,29 @@ public class TransactionController {
         return ResponseEntity.ok(allTransactions);
     }
 
-    @PostMapping("/transaction")
+    @GetMapping("/transactions/{transactionId}")
+    public ResponseEntity<Transaction> getTransaction(@PathVariable long transactionId) throws Throwable {
+        Transaction foundTransaction = transactionService.retrieveTransaction(transactionId);
+        return ResponseEntity.ok(foundTransaction);
+    }
+
+    @PostMapping("/transactions")
     public ResponseEntity<Transaction> addTransaction(@RequestBody Transaction transactionToSave) {
         Transaction savedTransaction = transactionService.saveTransaction(transactionToSave);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(savedTransaction.getTransactionId()).toUri();
         return ResponseEntity.created(location).body(savedTransaction);
+    }
+
+    @PutMapping("/transactions/{transactionId}")
+    public ResponseEntity<Transaction> editTransaction(@PathVariable long transactionId, @RequestBody Transaction editedTransaction) throws TransactionNotFoundException {
+        Transaction savedTransaction = transactionService.updateTransaction(transactionId, editedTransaction);
+        return ResponseEntity.ok(savedTransaction);
+    }
+
+    @DeleteMapping("/transactions/{transactionId}")
+    public ResponseEntity<String> deleteTransaction(@PathVariable long transactionId) throws TransactionNotFoundException {
+        transactionService.deleteTransactionById(transactionId);
+        return ResponseEntity.ok("Success");
     }
 
 }
